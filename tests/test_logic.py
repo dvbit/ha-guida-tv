@@ -5,9 +5,9 @@ from datetime import datetime, timezone
 import scraper
 
 CH_HTML = '''
-<div data-testid="channel-card"><a href="/canali/rai-1"><div class="channel_card"><div class="image"><img alt="Logo canale Rai 1" src="http://logo/rai1.png"/></div><h5 class="channel-name">#<!-- -->1<!-- --> <span>Digitale Terrestre</span></h5></div></a></div>
-<div data-testid="channel-card"><a href="/canali/rsi-la1"><div class="channel_card"><div class="image"><img alt="Logo canale RSI LA1" src="http://logo/rsi.png"/></div><h5 class="channel-name">#<!-- -->CH1<!-- --> <span>Digitale Terrestre</span></h5></div></a></div>
-<div data-testid="channel-card"><a href="/canali/sky-uno-hd"><div class="channel_card"><div class="image"><img alt="Logo canale Sky Uno HD" src="http://logo/sky.png"/></div><h5 class="channel-name">#<!-- -->108<!-- --> <span>Sky Intrattenimento</span></h5></div></a></div>
+<div data-testid="channel-card"><a href="/canali/rai-1"><div class="channel_card"><div class="image"><img alt="Logo canale Rai 1" src="http://logo/rai1.png"/></div><p class="text-light fs-5 fw-light mt-3">#<!-- -->1</p></div></a></div>
+<div data-testid="channel-card"><a href="/canali/rsi-la1"><div class="channel_card"><div class="image"><img alt="Logo canale RSI LA1" src="http://logo/rsi.png"/></div><p class="text-light fs-5 fw-light mt-3">#<!-- -->CH1</p></div></a></div>
+<div data-testid="channel-card"><a href="/canali/sky-uno-hd"><div class="channel_card"><div class="image"><img alt="Logo canale Sky Uno HD" src="http://logo/sky.png"/></div><p class="text-light fs-5 fw-light mt-3">#<!-- -->108</p></div></a></div>
 '''
 
 RSC = r'''x\"other\":1},{\"id\":\"a1\",\"title\":\"Programma Uno\",\"description\":\"Città e società, perché sì.\",\"durata\":\"60\",\"genre\":\"Film\",\"category\":\"Film\",\"image\":\"http://img/1.jpg\",\"director\":null,\"inizio\":\"2026-09-26T19:00:00.000Z\",\"fine\":\"2026-09-26T20:00:00.000Z\",\"year\":\"2020\"},{\"id\":\"a2\",\"title\":\"Programma Due\",\"description\":\"Segue.\",\"durata\":\"30\",\"genre\":\"News\",\"category\":\"News\",\"image\":\"http://img/2.jpg\",\"director\":null,\"inizio\":\"2026-09-26T20:00:00.000Z\",\"fine\":\"2026-09-26T20:30:00.000Z\",\"year\":null}'''
@@ -15,10 +15,10 @@ RSC = r'''x\"other\":1},{\"id\":\"a1\",\"title\":\"Programma Uno\",\"description
 def test_channels():
     ch = scraper.parse_channels(CH_HTML)
     assert len(ch) == 3
-    assert ch[0] == {"slug":"rai-1","name":"Rai 1","number":"1","logo":"http://logo/rai1.png","category":"Digitale Terrestre"}
+    assert ch[0] == {"slug":"rai-1","name":"Rai 1","number":"1","logo":"http://logo/rai1.png","category":None}
     assert ch[1]["number"] == "CH1"
-    assert ch[2]["category"] == "Sky Intrattenimento"
-    print("1. parse_channels (DTT + CH + Sky): OK")
+    assert ch[2]["number"] == "108"
+    print("1. parse_channels (numero da <p>, DTT + CH + Sky): OK")
 
 def test_programs():
     pr = scraper.parse_programs(RSC)
@@ -69,8 +69,17 @@ def test_dedup_sort():
     assert uniq[0]["start"] <= uniq[1]["start"]
     print("7. dedup + ordinamento cronologico: OK")
 
+def test_channel_h5_fallback():
+    # Se manca il <p> con #, usa l'h5.channel-name (pagina dettaglio)
+    html = '<div data-testid="channel-card"><a href="/canali/rai-1"><div class="image"><img alt="Logo canale Rai 1" src="x"/></div><h5 class="channel-name">#<!-- -->1<!-- --> <span>Digitale Terrestre</span></h5></div></a></div>'
+    ch = scraper.parse_channels(html)
+    assert ch[0]["number"] == "1", ch[0]
+    assert ch[0]["category"] == "Digitale Terrestre", ch[0]
+    print("8. fallback h5.channel-name (numero + categoria): OK")
+
 if __name__ == "__main__":
     test_channels(); test_programs(); test_accents()
     test_malformed_channel(); test_empty_stream()
     test_current_next_logic(); test_dedup_sort()
-    print("\nTUTTI I 7 TEST PASSATI")
+    test_channel_h5_fallback()
+    print("\nTUTTI I 8 TEST PASSATI")

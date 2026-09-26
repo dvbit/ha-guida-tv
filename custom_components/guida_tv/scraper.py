@@ -58,17 +58,32 @@ def parse_channels(html: str) -> list[dict[str, Any]]:
                 name = img["alt"][len(_ALT_PREFIX):].strip()
             logo = img.get("src")
 
-        # Numero e categoria: dall'h5 "channel-name" → "#<numero> <span>categoria</span>"
-        # Il numero può essere numerico ("1") o alfanumerico ("CH1" per RSI).
+        # Numero e categoria.
+        # Nella pagina /canali il numero è in un <p> che inizia con "#":
+        #   <p ...>#<!-- -->1</p>  ->  "1"  (o "CH1" per RSI).
+        # La categoria NON è nella card in /canali (viene dai tab), quindi resta
+        # None qui; è invece presente nell'h5.channel-name della pagina dettaglio,
+        # usato come fallback per robustezza se il markup cambia.
+        # Il numero può essere numerico (1-738) o alfanumerico (CH1/CH2).
         number: str | None = None
         category: str | None = None
-        h5 = card.find("h5", class_="channel-name")
-        if h5:
-            span = h5.find("span")
-            if span:
-                category = span.get_text(strip=True)
-                span.extract()  # rimuove la categoria per isolare il numero
-            number = h5.get_text().replace("#", "").strip() or None
+
+        # 1) Sorgente primaria: <p> con "#" (pagina /canali)
+        for para in card.find_all("p"):
+            text = para.get_text().strip()
+            if text.startswith("#"):
+                number = text.lstrip("#").strip() or None
+                break
+
+        # 2) Fallback: h5.channel-name "#<numero> <span>categoria</span>"
+        if number is None:
+            h5 = card.find("h5", class_="channel-name")
+            if h5:
+                span = h5.find("span")
+                if span:
+                    category = span.get_text(strip=True)
+                    span.extract()  # isola il numero rimuovendo la categoria
+                number = h5.get_text().replace("#", "").strip() or None
 
         if not name:
             # Fallback nome: usa lo slug leggibile

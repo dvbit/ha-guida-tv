@@ -81,9 +81,9 @@ Repository: `dvbit/ha-guida-tv`.
 - README EN e IT con esempi d'uso, questa specifica inclusa, icona,
   `hacs.json`, `manifest.json` versionato (1.0.0), workflow hassfest + HACS.
 
-## Verifiche eseguite (v1.0.0)
+## Verifiche eseguite (v1.1.0)
 
-- 7 test logici su scraper (canali DTT/CH/Sky, programmi RSC bilanciati,
+- 8 test logici su scraper (incluso numero canale da <p> e fallback h5) (canali DTT/CH/Sky, programmi RSC bilanciati,
   accenti UTF-8, card malformate, stream vuoto, logica in-onda + progress,
   dedup + ordinamento): passati.
 - ruff (E,F,W,I,UP,B,SIM,D) su codice e test: pulito.
