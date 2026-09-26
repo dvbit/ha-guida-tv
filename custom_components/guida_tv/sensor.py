@@ -55,18 +55,42 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Crea le entità sensore a partire dai canali in cache/scrape (SPEC §6)."""
+    """Crea le entità sensore; i sensori per-canale sono aggiunti dinamicamente.
+
+    I sensori riepilogativo e diagnostico esistono sempre. I sensori per-canale
+    dipendono dai canali scaricati: al primo avvio senza cache la lista può essere
+    ancora vuota, e nuovi canali possono comparire a refresh successivi. Per questo
+    li aggiungiamo a ogni update del coordinator, tracciando gli slug già creati
+    così da non duplicarli (SPEC §6).
+    """
     coordinator: GuidaTvCoordinator = entry.runtime_data
 
-    entities: list[SensorEntity] = [
-        GuidaTvChannelsSensor(coordinator),
-        GuidaTvDiagnosticSensor(coordinator),
-    ]
-    # Un sensore "in onda" per ciascun canale noto
-    for channel in coordinator.data.get("channels", []):
-        entities.append(GuidaTvChannelSensor(coordinator, channel))
+    async_add_entities(
+        [
+            GuidaTvChannelsSensor(coordinator),
+            GuidaTvDiagnosticSensor(coordinator),
+        ]
+    )
 
-    async_add_entities(entities)
+    # Slug per cui è già stato creato il sensore per-canale
+    known_slugs: set[str] = set()
+
+    @callback
+    def _add_new_channels() -> None:
+        """Aggiunge un sensore per ogni canale non ancora presente."""
+        new_entities: list[SensorEntity] = []
+        for channel in coordinator.data.get("channels", []):
+            slug = channel.get("slug")
+            if slug and slug not in known_slugs:
+                known_slugs.add(slug)
+                new_entities.append(GuidaTvChannelSensor(coordinator, channel))
+        if new_entities:
+            _LOGGER.info("Aggiunti %d nuovi sensori canale", len(new_entities))
+            async_add_entities(new_entities)
+
+    # Crea subito quelli già disponibili (da cache), poi a ogni refresh
+    _add_new_channels()
+    entry.async_on_unload(coordinator.async_add_listener(_add_new_channels))
 
 
 def _parse_iso(value: str | None) -> datetime | None:

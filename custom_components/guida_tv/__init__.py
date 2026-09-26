@@ -55,15 +55,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Carica la cache e programma il refresh giornaliero (SPEC §4, §8)
     await coordinator.async_prepare()
-    # Primo refresh: se non c'è cache è bloccante, altrimenti parte in background
+    # Primo refresh bloccante solo se non c'è cache (serve popolare i canali per
+    # creare i sensori). Con cache presente il refresh parte DOPO il setup delle
+    # piattaforme, così il listener che aggiunge i sensori canale è già registrato.
     if not coordinator.data.get("channels"):
         await coordinator.async_config_entry_first_refresh()
-    else:
-        hass.async_create_task(coordinator.async_request_refresh())
 
     entry.runtime_data = coordinator
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    # Ora che sensor.py ha registrato il listener, aggiorna in background se
+    # avevamo già una cache (per intercettare canali nuovi/rimossi).
+    if coordinator.data.get("channels"):
+        hass.async_create_task(coordinator.async_request_refresh())
 
     _register_services(hass)
 
