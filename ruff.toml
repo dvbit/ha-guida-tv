@@ -1,0 +1,17 @@
+target-version = "py312"
+line-length = 100
+
+[lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "D"]
+# D203/D213: stile docstring alternativo, in conflitto con pep257.
+# D401: "imperative mood" è valutato sull'inglese; le docstring del progetto
+#       sono in italiano (convenzione utente), quindi il check è un falso positivo.
+ignore = ["D203", "D213", "D401"]
+
+[lint.per-file-ignores]
+# I test contengono campioni HTML/RSC reali che devono restare inline (E501)
+# e usano uno stile compatto voluto (E701/E702). D: no docstring nei test.
+"tests/*" = ["D", "E501", "E701", "E702", "E401", "I001", "UP017"]
+
+[lint.pydocstyle]
+convention = "pep257"

@@ -1,0 +1,54 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Guida TV",
+        "description": "Add the Guida TV integration. It scrapes guidatv.org for the channel list (name + number) and the programme guide (yesterday to the day after tomorrow)."
+      }
+    },
+    "abort": {
+      "already_configured": "Guida TV is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Guida TV options",
+        "data": {
+          "update_hour": "Daily refresh hour (0-23)",
+          "update_minute": "Daily refresh minute (0-59)",
+          "request_delay": "Delay between requests (seconds)",
+          "include_yesterday": "Include yesterday in the guide"
+        }
+      }
+    }
+  },
+  "services": {
+    "refresh": {
+      "name": "Refresh",
+      "description": "Force an immediate update of channels and guide."
+    },
+    "get_schedule": {
+      "name": "Get schedule",
+      "description": "Return the filtered programme guide in a reusable format.",
+      "fields": {
+        "channel": {
+          "name": "Channel",
+          "description": "One or more channel slugs (e.g. rai-1). Empty = all channels."
+        },
+        "date": {
+          "name": "Date",
+          "description": "YYYY-MM-DD or a keyword: ieri, oggi, domani, dopodomani."
+        },
+        "time_from": {
+          "name": "From time",
+          "description": "Minimum local start time, HH:MM."
+        },
+        "time_to": {
+          "name": "To time",
+          "description": "Maximum local start time, HH:MM."
+        }
+      }
+    }
+  }
+}

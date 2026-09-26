@@ -1,0 +1,15 @@
+# Validazione hassfest di Home Assistant.
+# NOTA: spostare in .github/workflows/ dopo il push (il PAT usato non ha lo
+# scope 'workflow', quindi non può creare file sotto .github/workflows via API).
+name: hassfest
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 0 * * *"
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: home-assistant/actions/hassfest@master

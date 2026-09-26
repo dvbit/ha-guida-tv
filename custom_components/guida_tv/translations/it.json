@@ -1,0 +1,54 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Guida TV",
+        "description": "Aggiunge l'integrazione Guida TV. Fa lo scrape di guidatv.org per la lista canali (nome + numero) e la programmazione (da ieri a dopodomani)."
+      }
+    },
+    "abort": {
+      "already_configured": "Guida TV è già configurata."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opzioni Guida TV",
+        "data": {
+          "update_hour": "Ora del refresh giornaliero (0-23)",
+          "update_minute": "Minuto del refresh giornaliero (0-59)",
+          "request_delay": "Pausa tra le richieste (secondi)",
+          "include_yesterday": "Includi ieri nella guida"
+        }
+      }
+    }
+  },
+  "services": {
+    "refresh": {
+      "name": "Aggiorna",
+      "description": "Forza un aggiornamento immediato di canali e guida."
+    },
+    "get_schedule": {
+      "name": "Ottieni programmazione",
+      "description": "Restituisce la programmazione filtrata in formato riusabile.",
+      "fields": {
+        "channel": {
+          "name": "Canale",
+          "description": "Uno o più slug canale (es. rai-1). Vuoto = tutti i canali."
+        },
+        "date": {
+          "name": "Data",
+          "description": "YYYY-MM-DD oppure una parola chiave: ieri, oggi, domani, dopodomani."
+        },
+        "time_from": {
+          "name": "Dalle ore",
+          "description": "Ora locale minima di inizio, HH:MM."
+        },
+        "time_to": {
+          "name": "Alle ore",
+          "description": "Ora locale massima di inizio, HH:MM."
+        }
+      }
+    }
+  }
+}

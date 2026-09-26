@@ -1,0 +1,6 @@
+{
+  "services": {
+    "refresh": { "service": "mdi:refresh" },
+    "get_schedule": { "service": "mdi:television-guide" }
+  }
+}

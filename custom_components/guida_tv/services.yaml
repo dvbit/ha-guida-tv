@@ -1,0 +1,34 @@
+# Servizi dell'integrazione Guida TV (SPEC §5)
+
+refresh:
+  # Forza un aggiornamento immediato di canali e guida.
+  fields: {}
+
+get_schedule:
+  # Restituisce la programmazione filtrata, in formato riusabile (es. Astrion).
+  fields:
+    channel:
+      # Uno o più slug canale (es. "rai-1"). Vuoto = tutti i canali.
+      example: "rai-1"
+      required: false
+      selector:
+        text:
+          multiple: true
+    date:
+      # "YYYY-MM-DD" oppure una parola chiave: ieri, oggi, domani, dopodomani.
+      example: "oggi"
+      required: false
+      selector:
+        text:
+    time_from:
+      # Ora locale minima di inizio programma, formato "HH:MM".
+      example: "20:00"
+      required: false
+      selector:
+        text:
+    time_to:
+      # Ora locale massima di inizio programma, formato "HH:MM".
+      example: "23:30"
+      required: false
+      selector:
+        text:
