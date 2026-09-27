@@ -37,12 +37,20 @@ CONF_UPDATE_MINUTE: Final = "update_minute"      # minuto del refresh giornalier
 CONF_REQUEST_DELAY: Final = "request_delay"      # pausa tra richieste (s)
 CONF_CATEGORIES: Final = "categories"            # categorie canali da includere
 CONF_INCLUDE_YESTERDAY: Final = "include_yesterday"  # includere "ieri" nella guida
+CONF_DOWNLOAD_LOGOS: Final = "download_logos"    # scaricare i loghi in locale
 
 # --- Valori di default (SPEC §4) ---------------------------------------------
 DEFAULT_UPDATE_HOUR: Final = 5
 DEFAULT_UPDATE_MINUTE: Final = 0
 DEFAULT_REQUEST_DELAY: Final = 1.0   # secondi, per non sovraccaricare il sito
 DEFAULT_INCLUDE_YESTERDAY: Final = True
+DEFAULT_DOWNLOAD_LOGOS: Final = True
+
+# Loghi locali (SPEC §6): salvati sotto /config/www così HA li serve su /local
+# www è la cartella statica di HA; il primo uso di /local richiede un riavvio.
+LOGO_SUBDIR: Final = "guida_tv/loghi"          # relativo a <config>/www/
+LOGO_URL_BASE: Final = "/local/guida_tv/loghi"  # URL pubblico servito da HA
+ATTR_LOGO_LOCAL: Final = "logo_local"
 
 # Timeout per singola richiesta HTTP
 HTTP_TIMEOUT: Final = 30

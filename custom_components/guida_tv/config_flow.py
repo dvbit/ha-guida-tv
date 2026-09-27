@@ -20,10 +20,12 @@ from homeassistant.core import callback
 from homeassistant.helpers import selector
 
 from .const import (
+    CONF_DOWNLOAD_LOGOS,
     CONF_INCLUDE_YESTERDAY,
     CONF_REQUEST_DELAY,
     CONF_UPDATE_HOUR,
     CONF_UPDATE_MINUTE,
+    DEFAULT_DOWNLOAD_LOGOS,
     DEFAULT_INCLUDE_YESTERDAY,
     DEFAULT_REQUEST_DELAY,
     DEFAULT_UPDATE_HOUR,
@@ -102,6 +104,12 @@ class GuidaTvOptionsFlow(OptionsFlow):
                     CONF_INCLUDE_YESTERDAY,
                     default=current.get(
                         CONF_INCLUDE_YESTERDAY, DEFAULT_INCLUDE_YESTERDAY
+                    ),
+                ): selector.BooleanSelector(),
+                vol.Optional(
+                    CONF_DOWNLOAD_LOGOS,
+                    default=current.get(
+                        CONF_DOWNLOAD_LOGOS, DEFAULT_DOWNLOAD_LOGOS
                     ),
                 ): selector.BooleanSelector(),
             }

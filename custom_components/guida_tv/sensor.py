@@ -35,6 +35,7 @@ from .const import (
     ATTR_IMAGE,
     ATTR_LAST_UPDATE,
     ATTR_LOGO,
+    ATTR_LOGO_LOCAL,
     ATTR_NEXT_START,
     ATTR_NEXT_TITLE,
     ATTR_NUMBER,
@@ -160,6 +161,7 @@ class GuidaTvChannelsSensor(CoordinatorEntity[GuidaTvCoordinator], SensorEntity)
                     "name": c.get("name"),
                     "slug": c.get("slug"),
                     ATTR_LOGO: c.get("logo"),
+                    ATTR_LOGO_LOCAL: c.get("logo_local"),
                     ATTR_CATEGORY: c.get("category"),
                 }
                 for c in ordered
@@ -239,6 +241,7 @@ class GuidaTvChannelSensor(CoordinatorEntity[GuidaTvCoordinator], SensorEntity):
         attrs: dict[str, Any] = {
             ATTR_NUMBER: channel.get("number"),
             ATTR_LOGO: channel.get("logo"),
+            ATTR_LOGO_LOCAL: channel.get("logo_local"),
             ATTR_CATEGORY: channel.get("category"),
         }
         if current:

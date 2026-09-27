@@ -18,7 +18,8 @@
           "update_hour": "Stunde der täglichen Aktualisierung (0-23)",
           "update_minute": "Minute der täglichen Aktualisierung (0-59)",
           "request_delay": "Verzögerung zwischen Anfragen (Sekunden)",
-          "include_yesterday": "Gestern in die Programmübersicht aufnehmen"
+          "include_yesterday": "Gestern in die Programmübersicht aufnehmen",
+          "download_logos": "Sender-Logos lokal herunterladen"
         }
       }
     }

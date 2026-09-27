@@ -93,9 +93,22 @@ def test_sanitize_slug():
         assert valid.match(got), f"{got} non valido come object_id"
     print("9. sanitize_slug su slug problematici (super!, +24, .5): OK")
 
+def test_detail_category_and_logo_helpers():
+    d = '<h5 class="channel-name">#<!-- -->50<!-- --> <span class="x">Digitale Terrestre</span></h5>'
+    assert scraper.parse_detail_category(d) == "Digitale Terrestre"
+    assert scraper.parse_detail_category("<div>no h5</div>") is None
+    proxy = "/_next/image?url=https%3A%2F%2Fimg-guidatv.org%2Floghi%2Fb%2F%2Frai1.png&w=3840&q=75"
+    assert scraper.logo_source_url(proxy) == "https://img-guidatv.org/loghi/b//rai1.png"
+    assert scraper.logo_source_url("https://img-guidatv.org/x.png") == "https://img-guidatv.org/x.png"
+    assert scraper.logo_source_url(None) is None
+    assert scraper.logo_filename("https://x/loghi/rai1.png", "rai_1") == "rai_1.png"
+    assert scraper.logo_filename("https://x/y.jpeg", "super") == "super.jpg"
+    print("10. categoria dettaglio + helper logo (source/filename): OK")
+
 if __name__ == "__main__":
     test_channels(); test_programs(); test_accents()
     test_malformed_channel(); test_empty_stream()
     test_current_next_logic(); test_dedup_sort()
     test_channel_h5_fallback(); test_sanitize_slug()
-    print("\nTUTTI I 9 TEST PASSATI")
+    test_detail_category_and_logo_helpers()
+    print("\nTUTTI I 10 TEST PASSATI")

@@ -18,7 +18,8 @@
           "update_hour": "Hora de actualización diaria (0-23)",
           "update_minute": "Minuto de actualización diaria (0-59)",
           "request_delay": "Retardo entre solicitudes (segundos)",
-          "include_yesterday": "Incluir ayer en la guía"
+          "include_yesterday": "Incluir ayer en la guía",
+          "download_logos": "Descargar los logotipos de los canales localmente"
         }
       }
     }

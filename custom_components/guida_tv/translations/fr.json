@@ -18,7 +18,8 @@
           "update_hour": "Heure du rafraîchissement quotidien (0-23)",
           "update_minute": "Minute du rafraîchissement quotidien (0-59)",
           "request_delay": "Délai entre les requêtes (secondes)",
-          "include_yesterday": "Inclure hier dans le guide"
+          "include_yesterday": "Inclure hier dans le guide",
+          "download_logos": "Télécharger les logos des chaînes en local"
         }
       }
     }

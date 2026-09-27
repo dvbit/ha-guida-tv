@@ -18,7 +18,8 @@
           "update_hour": "Daily refresh hour (0-23)",
           "update_minute": "Daily refresh minute (0-59)",
           "request_delay": "Delay between requests (seconds)",
-          "include_yesterday": "Include yesterday in the guide"
+          "include_yesterday": "Include yesterday in the guide",
+          "download_logos": "Download channel logos locally"
         }
       }
     }

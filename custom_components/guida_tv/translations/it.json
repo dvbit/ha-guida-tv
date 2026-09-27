@@ -18,7 +18,8 @@
           "update_hour": "Ora del refresh giornaliero (0-23)",
           "update_minute": "Minuto del refresh giornaliero (0-59)",
           "request_delay": "Pausa tra le richieste (secondi)",
-          "include_yesterday": "Includi ieri nella guida"
+          "include_yesterday": "Includi ieri nella guida",
+          "download_logos": "Scarica i loghi dei canali in locale"
         }
       }
     }

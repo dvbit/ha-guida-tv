@@ -38,7 +38,7 @@ programme guide into Home Assistant by scraping
 | Entity | State | Key attributes |
 |---|---|---|
 | `sensor.guida_tv_channels` | number of channels | `channels`: list of `{number, name, slug, logo, category}` |
-| `sensor.guida_tv_<slug>` | title on air now | `number, logo, category, start, stop, progress, image, genre, description, next_title, next_start` |
+| `sensor.guida_tv_<slug>` | title on air now | `number, logo, logo_local, category, start, stop, progress, image, genre, description, next_title, next_start` |
 | `sensor.guida_tv_last_update` | `ok` / `errori` | `last_update, channel_count, program_count, errors` |
 
 ## Options

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 from datetime import datetime
 from typing import Any
 
@@ -29,21 +30,32 @@ from .const import (
     BASE_URL,
     CHANNELS_PATH,
     CONF_CATEGORIES,
+    CONF_DOWNLOAD_LOGOS,
     CONF_INCLUDE_YESTERDAY,
     CONF_REQUEST_DELAY,
     CONF_UPDATE_HOUR,
     CONF_UPDATE_MINUTE,
     DAY_PATHS,
+    DEFAULT_DOWNLOAD_LOGOS,
     DEFAULT_INCLUDE_YESTERDAY,
     DEFAULT_REQUEST_DELAY,
     DEFAULT_UPDATE_HOUR,
     DEFAULT_UPDATE_MINUTE,
     HTTP_TIMEOUT,
+    LOGO_SUBDIR,
+    LOGO_URL_BASE,
     STORAGE_KEY,
     STORAGE_VERSION,
     USER_AGENT,
 )
-from .scraper import parse_channels, parse_programs
+from .scraper import (
+    logo_filename,
+    logo_source_url,
+    parse_channels,
+    parse_detail_category,
+    parse_programs,
+    sanitize_slug,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -90,6 +102,10 @@ class GuidaTvCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         return self.entry.options.get(
             CONF_INCLUDE_YESTERDAY, DEFAULT_INCLUDE_YESTERDAY
         )
+
+    @property
+    def _download_logos(self) -> bool:
+        return self.entry.options.get(CONF_DOWNLOAD_LOGOS, DEFAULT_DOWNLOAD_LOGOS)
 
     # -- Ciclo di vita --------------------------------------------------------
     async def async_prepare(self) -> None:
@@ -161,6 +177,53 @@ class GuidaTvCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             _LOGGER.warning("Errore scaricando %s: %s", url, err)
             return None
 
+    async def _download_logo(
+        self,
+        session: aiohttp.ClientSession,
+        channel: dict[str, Any],
+        logo_dir: str,
+    ) -> str | None:
+        """Scarica il logo del canale in locale e ritorna l'URL /local, o None.
+
+        Scarica il PNG sorgente (non il proxy Next) solo se non già presente su
+        disco (SPEC §6). Un fallimento non blocca il refresh: logga WARNING e
+        ritorna comunque l'URL /local se il file esiste, altrimenti None.
+        """
+        source = logo_source_url(channel.get("logo"))
+        if not source:
+            return None
+        safe = sanitize_slug(channel["slug"])
+        filename = logo_filename(source, safe)
+        dest = os.path.join(logo_dir, filename)
+        public_url = f"{LOGO_URL_BASE}/{filename}"
+
+        # Se già presente, non riscaricare (SPEC §6: solo mancanti)
+        if await self.hass.async_add_executor_job(os.path.exists, dest):
+            return public_url
+
+        try:
+            async with session.get(
+                source,
+                headers={"User-Agent": USER_AGENT},
+                timeout=aiohttp.ClientTimeout(total=HTTP_TIMEOUT),
+            ) as resp:
+                if resp.status != 200:
+                    _LOGGER.warning("Logo HTTP %s per %s", resp.status, source)
+                    return None
+                data = await resp.read()
+        except (TimeoutError, aiohttp.ClientError) as err:
+            _LOGGER.warning("Errore scaricando il logo %s: %s", source, err)
+            return None
+
+        try:
+            await self.hass.async_add_executor_job(_write_bytes, dest, data)
+        except OSError as err:
+            _LOGGER.warning("Impossibile salvare il logo %s: %s", dest, err)
+            return None
+
+        _LOGGER.debug("Logo salvato: %s (%d byte)", dest, len(data))
+        return public_url
+
     async def _async_update_data(self) -> dict[str, Any]:
         """Esegue lo scrape completo: canali + guida per ogni canale.
 
@@ -186,18 +249,27 @@ class GuidaTvCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             errors.append("Nessun canale estratto dalla pagina /canali")
             raise UpdateFailed("Parsing canali fallito")
 
-        # Filtro categorie (SPEC §5): None = tutte
-        cats = self._categories
-        if cats:
-            channels = [c for c in channels if c.get("category") in cats]
-            _LOGGER.debug("Filtrate %d categorie, %d canali restanti", len(cats), len(channels))
-
         # 2) Giorni da scaricare (SPEC §3) ------------------------------------
         day_keys = list(DAY_PATHS.keys())
         if not self._include_yesterday:
             day_keys = [d for d in day_keys if d != "ieri"]
 
-        # 3) Guida per canale (SPEC §3, §4: richieste distanziate) -------------
+        # Prepara la cartella dei loghi una sola volta (SPEC §6)
+        download_logos = self._download_logos
+        logo_dir = os.path.join(
+            self.hass.config.config_dir, "www", *LOGO_SUBDIR.split("/")
+        )
+        if download_logos:
+            try:
+                await self.hass.async_add_executor_job(
+                    lambda: os.makedirs(logo_dir, exist_ok=True)
+                )
+            except OSError as err:
+                errors.append(f"Cartella loghi non creabile: {err}")
+                _LOGGER.warning("Impossibile creare %s: %s", logo_dir, err)
+                download_logos = False
+
+        # 3) Guida + categoria + logo per canale (SPEC §3, §4, §6) ------------
         programs: dict[str, list[dict[str, Any]]] = {}
         delay = self._delay
         for channel in channels:
@@ -211,6 +283,10 @@ class GuidaTvCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     errors.append(f"Guida non scaricata: {slug}/{day}")
                     continue
                 merged.extend(parse_programs(page))
+                # La categoria reale è nella pagina dettaglio "oggi" (SPEC §6):
+                # la estraiamo dalla stessa pagina già scaricata, senza richieste extra.
+                if day == "oggi" and not channel.get("category"):
+                    channel["category"] = parse_detail_category(page)
 
             # Deduplica per (start, title) e ordina per orario di inizio
             seen: set[tuple] = set()
@@ -221,6 +297,21 @@ class GuidaTvCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     seen.add(key)
                     unique.append(prog)
             programs[slug] = unique
+
+            # Logo locale (SPEC §6): scarica solo se abilitato e non già presente
+            if download_logos:
+                local = await self._download_logo(session, channel, logo_dir)
+                if local:
+                    channel["logo_local"] = local
+
+        # Filtro categorie (SPEC §5): applicato ORA che la categoria è nota.
+        # None = tutte. I programmi dei canali esclusi non vengono rimossi qui
+        # perché già scaricati; l'esclusione riguarda le entità esposte.
+        cats = self._categories
+        if cats:
+            before = len(channels)
+            channels = [c for c in channels if c.get("category") in cats]
+            _LOGGER.debug("Filtro categorie: %d -> %d canali", before, len(channels))
 
         result = {
             "channels": channels,
@@ -240,3 +331,9 @@ class GuidaTvCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             len(errors),
         )
         return result
+
+
+def _write_bytes(path: str, data: bytes) -> None:
+    """Scrive i byte del logo su disco (eseguito in executor, non nel loop)."""
+    with open(path, "wb") as handle:
+        handle.write(data)

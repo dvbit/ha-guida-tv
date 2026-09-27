@@ -37,7 +37,7 @@ per alimentare dashboard esterne come **Astrion**.
 | Entità | Stato | Attributi principali |
 |---|---|---|
 | `sensor.guida_tv_channels` | numero canali | `channels`: lista di `{number, name, slug, logo, category}` |
-| `sensor.guida_tv_<slug>` | titolo in onda ora | `number, logo, category, start, stop, progress, image, genre, description, next_title, next_start` |
+| `sensor.guida_tv_<slug>` | titolo in onda ora | `number, logo, logo_local, category, start, stop, progress, image, genre, description, next_title, next_start` |
 | `sensor.guida_tv_last_update` | `ok` / `errori` | `last_update, channel_count, program_count, errors` |
 
 ## Opzioni

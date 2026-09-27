@@ -20,6 +20,7 @@ import json
 import logging
 import re
 from typing import Any
+from urllib.parse import parse_qs, unquote, urlparse
 
 from bs4 import BeautifulSoup
 
@@ -41,6 +42,49 @@ def sanitize_slug(slug: str) -> str:
     """
     safe = re.sub(r"[^a-z0-9]+", "_", slug.lower()).strip("_")
     return safe or "channel"
+
+
+def parse_detail_category(html: str) -> str | None:
+    """Estrae la categoria del canale dalla pagina dettaglio /canali/<slug>.
+
+    La categoria è nello <span> dell'h5.channel-name: "#<numero> <span>Categoria</span>"
+    (es. "Digitale Terrestre", "Sky Cinema"). È la categoria reale del canale, più
+    precisa dei macro-tab della pagina /canali. Questa pagina è già scaricata per la
+    guida di "oggi", quindi non comporta richieste aggiuntive (SPEC §3).
+    """
+    soup = BeautifulSoup(html, "html.parser")
+    h5 = soup.find("h5", class_="channel-name")
+    if h5:
+        span = h5.find("span")
+        if span:
+            return span.get_text(strip=True) or None
+    return None
+
+
+def logo_source_url(logo: str | None) -> str | None:
+    """Ricava l'URL del PNG sorgente dal valore del logo.
+
+    Sul sito il logo è un proxy di Next.js: "/_next/image?url=<encoded>&w=..&q=..".
+    Il file reale è nel parametro `url` (es. https://img-guidatv.org/loghi/b//rai1.png).
+    Se il valore è già un URL assoluto, viene restituito invariato.
+    """
+    if not logo:
+        return None
+    if logo.startswith("http"):
+        return logo
+    query = parse_qs(urlparse(logo).query)
+    if "url" in query and query["url"]:
+        return unquote(query["url"][0])
+    return None
+
+
+def logo_filename(source_url: str | None, safe_slug: str) -> str:
+    """Nome file locale del logo: <safe_slug>.<ext>, estensione dedotta dall'URL."""
+    ext = ".png"
+    match = re.search(r"\.(png|jpe?g|webp|gif)(?:$|\?)", source_url or "", re.IGNORECASE)
+    if match:
+        ext = "." + match.group(1).lower().replace("jpeg", "jpg")
+    return f"{safe_slug}{ext}"
 
 
 def parse_channels(html: str) -> list[dict[str, Any]]:
