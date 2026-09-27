@@ -50,6 +50,10 @@
           "description": "Maximum local start time, HH:MM."
         }
       }
+    },
+    "get_channels": {
+      "name": "Get channels",
+      "description": "Return the full channel list (number, name, slug, logo, logo_local, category)."
     }
   }
 }

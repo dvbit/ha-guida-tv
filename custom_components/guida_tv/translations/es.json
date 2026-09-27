@@ -50,6 +50,10 @@
           "description": "Hora local máxima de inicio, HH:MM."
         }
       }
+    },
+    "get_channels": {
+      "name": "Obtener canales",
+      "description": "Devuelve la lista completa de canales (número, nombre, slug, logo, logo_local, categoría)."
     }
   }
 }

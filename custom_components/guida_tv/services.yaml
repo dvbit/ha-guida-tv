@@ -32,3 +32,8 @@ get_schedule:
       required: false
       selector:
         text:
+
+get_channels:
+  # Restituisce la lista canali completa (number, name, slug, logo, logo_local,
+  # category), senza il limite di dimensione del recorder.
+  fields: {}

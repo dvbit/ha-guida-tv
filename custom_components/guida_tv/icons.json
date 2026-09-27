@@ -1,6 +1,13 @@
 {
   "services": {
-    "refresh": { "service": "mdi:refresh" },
-    "get_schedule": { "service": "mdi:television-guide" }
+    "refresh": {
+      "service": "mdi:refresh"
+    },
+    "get_schedule": {
+      "service": "mdi:television-guide"
+    },
+    "get_channels": {
+      "service": "mdi:format-list-numbered"
+    }
   }
 }

@@ -17,7 +17,7 @@ from typing import Any
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import EntityCategory
+from homeassistant.const import MATCH_ALL, EntityCategory
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -85,8 +85,14 @@ async def async_setup_entry(
         (es. dato inatteso), viene loggato e saltato senza compromettere gli altri
         né annullare l'intero lotto.
         """
+        available = coordinator.data.get("channels", []) if coordinator.data else []
+        _LOGGER.debug(
+            "Listener canali: %d canali disponibili, %d già noti",
+            len(available),
+            len(known_slugs),
+        )
         new_entities: list[SensorEntity] = []
-        for channel in coordinator.data.get("channels", []):
+        for channel in available:
             slug = channel.get("slug")
             if not slug or slug in known_slugs:
                 continue
@@ -120,6 +126,10 @@ class GuidaTvChannelsSensor(CoordinatorEntity[GuidaTvCoordinator], SensorEntity)
     """Sensore riepilogativo: lista canali per Astrion (SPEC §6)."""
 
     _attr_has_entity_name = True
+    # L'attributo `channels` (148 voci) supera il limite del recorder (16 KB):
+    # non registriamo gli attributi di questo sensore nel DB (restano live).
+    # La lista completa è comunque disponibile via servizio guida_tv.get_channels.
+    _unrecorded_attributes = frozenset({MATCH_ALL})
     # Nome inglese fisso per ID entità stabile (learnings: evitare translation_key
     # sul nome per non generare ID dipendenti dalla lingua alla registrazione).
     _attr_name = "Channels"

@@ -50,6 +50,10 @@
           "description": "Maximale lokale Startzeit, HH:MM."
         }
       }
+    },
+    "get_channels": {
+      "name": "Sender abrufen",
+      "description": "Gibt die vollständige Senderliste zurück (Nummer, Name, Slug, Logo, logo_local, Kategorie)."
     }
   }
 }

@@ -29,6 +29,7 @@ from .const import (
     ATTR_TIME_FROM,
     ATTR_TIME_TO,
     DOMAIN,
+    SERVICE_GET_CHANNELS,
     SERVICE_GET_SCHEDULE,
     SERVICE_REFRESH,
 )
@@ -89,6 +90,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if not hass.config_entries.async_loaded_entries(DOMAIN):
             hass.services.async_remove(DOMAIN, SERVICE_REFRESH)
             hass.services.async_remove(DOMAIN, SERVICE_GET_SCHEDULE)
+            hass.services.async_remove(DOMAIN, SERVICE_GET_CHANNELS)
     return unload_ok
 
 
@@ -140,12 +142,40 @@ def _register_services(hass: HomeAssistant) -> None:
         _LOGGER.debug("get_schedule: %d canali nella risposta", len(result))
         return {"schedule": result}
 
+    async def _handle_get_channels(call: ServiceCall) -> ServiceResponse:
+        """Restituisce la lista canali completa, riusabile da Astrion (SPEC §6).
+
+        La stessa lista è nell'attributo `channels` del sensore riepilogativo, ma
+        quell'attributo supera il limite del recorder (16 KB) e non viene storicizzato;
+        questo servizio la fornisce sempre completa, senza quel limite.
+        """
+        channels: list[dict] = []
+        for entry in hass.config_entries.async_loaded_entries(DOMAIN):
+            coordinator: GuidaTvCoordinator = entry.runtime_data
+            channels.extend(coordinator.data.get("channels", []))
+
+        def _sort_key(ch: dict) -> tuple[int, int, str]:
+            num = ch.get("number") or ""
+            if num.isdigit():
+                return (0, int(num), "")
+            return (1, 0, num)
+
+        channels.sort(key=_sort_key)
+        _LOGGER.debug("get_channels: %d canali nella risposta", len(channels))
+        return {"channels": channels}
+
     hass.services.async_register(DOMAIN, SERVICE_REFRESH, _handle_refresh)
     hass.services.async_register(
         DOMAIN,
         SERVICE_GET_SCHEDULE,
         _handle_get_schedule,
         schema=_GET_SCHEDULE_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_GET_CHANNELS,
+        _handle_get_channels,
         supports_response=SupportsResponse.ONLY,
     )
 

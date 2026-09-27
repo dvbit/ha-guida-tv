@@ -76,6 +76,7 @@ ATTR_PROGRAM_COUNT: Final = "program_count"
 # --- Servizi (SPEC §5) -------------------------------------------------------
 SERVICE_REFRESH: Final = "refresh"
 SERVICE_GET_SCHEDULE: Final = "get_schedule"
+SERVICE_GET_CHANNELS: Final = "get_channels"
 ATTR_CHANNEL: Final = "channel"
 ATTR_DATE: Final = "date"
 ATTR_TIME_FROM: Final = "time_from"
