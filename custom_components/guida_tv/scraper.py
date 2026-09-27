@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from typing import Any
 
 from bs4 import BeautifulSoup
@@ -26,6 +27,20 @@ _LOGGER = logging.getLogger(__name__)
 
 # Prefisso dell'attributo alt dei loghi canale: "Logo canale <Nome>"
 _ALT_PREFIX = "Logo canale "
+
+
+def sanitize_slug(slug: str) -> str:
+    """Rende uno slug sicuro per unique_id ed entity_id di Home Assistant.
+
+    Alcuni slug di guidatv.org contengono caratteri non ammessi in un entity_id
+    (es. "super!", "sky-cinema-uno-+24-hd", "rtl-102.5-tv"). Se anche un solo
+    sensore genera un id non valido, l'intero lotto di async_add_entities viene
+    annullato e nessun sensore per-canale viene creato. Qui riduciamo a
+    [a-z0-9_], collassando le sequenze e togliendo gli underscore ai bordi; lo
+    slug originale resta invariato per lo scraping e negli attributi.
+    """
+    safe = re.sub(r"[^a-z0-9]+", "_", slug.lower()).strip("_")
+    return safe or "channel"
 
 
 def parse_channels(html: str) -> list[dict[str, Any]]:

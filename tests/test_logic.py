@@ -77,9 +77,25 @@ def test_channel_h5_fallback():
     assert ch[0]["category"] == "Digitale Terrestre", ch[0]
     print("8. fallback h5.channel-name (numero + categoria): OK")
 
+def test_sanitize_slug():
+    # Slug reali di guidatv.org con caratteri non validi per un entity_id
+    cases = {
+        "rai-1": "rai_1",
+        "super!": "super",
+        "sky-cinema-uno-+24-hd": "sky_cinema_uno_24_hd",
+        "rtl-102.5-tv": "rtl_102_5_tv",
+        "zona-dazn-2": "zona_dazn_2",
+    }
+    valid = __import__("re").compile(r"^[a-z0-9_]+$")
+    for raw, expected in cases.items():
+        got = scraper.sanitize_slug(raw)
+        assert got == expected, f"{raw} -> {got} (atteso {expected})"
+        assert valid.match(got), f"{got} non valido come object_id"
+    print("9. sanitize_slug su slug problematici (super!, +24, .5): OK")
+
 if __name__ == "__main__":
     test_channels(); test_programs(); test_accents()
     test_malformed_channel(); test_empty_stream()
     test_current_next_logic(); test_dedup_sort()
-    test_channel_h5_fallback()
-    print("\nTUTTI I 8 TEST PASSATI")
+    test_channel_h5_fallback(); test_sanitize_slug()
+    print("\nTUTTI I 9 TEST PASSATI")

@@ -46,6 +46,7 @@ from .const import (
     UNIQUE_ID_PREFIX,
 )
 from .coordinator import GuidaTvCoordinator
+from .scraper import sanitize_slug
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -72,18 +73,29 @@ async def async_setup_entry(
         ]
     )
 
-    # Slug per cui è già stato creato il sensore per-canale
+    # Slug (originali) per cui è già stato creato il sensore per-canale
     known_slugs: set[str] = set()
 
     @callback
     def _add_new_channels() -> None:
-        """Aggiunge un sensore per ogni canale non ancora presente."""
+        """Aggiunge un sensore per ogni canale non ancora presente.
+
+        La costruzione di ogni sensore è isolata: se un canale genera un errore
+        (es. dato inatteso), viene loggato e saltato senza compromettere gli altri
+        né annullare l'intero lotto.
+        """
         new_entities: list[SensorEntity] = []
         for channel in coordinator.data.get("channels", []):
             slug = channel.get("slug")
-            if slug and slug not in known_slugs:
-                known_slugs.add(slug)
-                new_entities.append(GuidaTvChannelSensor(coordinator, channel))
+            if not slug or slug in known_slugs:
+                continue
+            try:
+                entity = GuidaTvChannelSensor(coordinator, channel)
+            except Exception:  # noqa: BLE001 - un canale non deve bloccare gli altri
+                _LOGGER.exception("Creazione sensore fallita per il canale %s", slug)
+                continue
+            known_slugs.add(slug)
+            new_entities.append(entity)
         if new_entities:
             _LOGGER.info("Aggiunti %d nuovi sensori canale", len(new_entities))
             async_add_entities(new_entities)
@@ -169,13 +181,17 @@ class GuidaTvChannelSensor(CoordinatorEntity[GuidaTvCoordinator], SensorEntity):
     def __init__(self, coordinator: GuidaTvCoordinator, channel: dict[str, Any]) -> None:
         """Inizializza il sensore in-onda di un canale."""
         super().__init__(coordinator)
+        # Slug originale: usato per cercare i programmi nei dati del coordinator.
         self._slug = channel["slug"]
+        # Slug sanitizzato: base di unique_id ed entity_id (deve essere valido).
+        safe_slug = sanitize_slug(self._slug)
         self._attr_name = channel.get("name") or self._slug
-        self._attr_unique_id = f"{UNIQUE_ID_PREFIX}_{self._slug}"
+        self._attr_unique_id = f"{UNIQUE_ID_PREFIX}_{safe_slug}"
         self._attr_icon = "mdi:television-classic"
         self._unsub_timer = None
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, self._slug)},
+            # identifiers deve essere stabile e sicuro: usa lo slug sanitizzato
+            identifiers={(DOMAIN, safe_slug)},
             name=self._attr_name,
             manufacturer="guidatv.org",
             model=channel.get("category"),
