@@ -12,6 +12,8 @@ programme guide into Home Assistant by scraping
 
 ## Features
 
+- **Channel selection**: pick which channels to download during setup, and
+  change the selection any time by reconfiguring the integration.
 - **Channel list** with number (1–738 and RSI `CH1`/`CH2`), name, logo and
   category (DTT, Sky Cinema, Sky Sport, …).
 - **Now / next** sensor per channel, updated at programme change with no polling.
@@ -32,6 +34,10 @@ programme guide into Home Assistant by scraping
    *Integration*.
 2. Install **Guida TV**, then restart Home Assistant.
 3. *Settings → Devices & Services → Add Integration → Guida TV*.
+4. Pick which channels to download (fetched live from guidatv.org). At least
+   one channel is required. Change the selection any time via *Configure* on
+   the integration — the list is re-fetched fresh and your current selection
+   is preselected.
 
 ## Entities
 

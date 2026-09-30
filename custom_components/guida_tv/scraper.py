@@ -87,6 +87,48 @@ def logo_filename(source_url: str | None, safe_slug: str) -> str:
     return f"{safe_slug}{ext}"
 
 
+def filter_selected_channels(
+    channels: list[dict[str, Any]], selected_slugs: list[str] | None
+) -> list[dict[str, Any]]:
+    """Filtra i canali sugli slug selezionati dall'utente.
+
+    `selected_slugs` è None quando l'utente non ha mai fatto una selezione
+    esplicita (config entry create prima di questa funzionalità): in quel caso
+    si mantengono TUTTI i canali per retrocompatibilità (SPEC: "le entry
+    esistenti continuano a mostrare tutti i canali finché non passi
+    dall'Options Flow"). Una lista vuota è invece una selezione esplicita
+    (per quanto la UI la impedisca) e produce zero canali.
+    """
+    if selected_slugs is None:
+        return channels
+    wanted = set(selected_slugs)
+    return [c for c in channels if c.get("slug") in wanted]
+
+
+def sort_channels(channels: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Ordina i canali per numero: numerici in ordine crescente, poi alfanumerici.
+
+    Usato sia per l'attributo `channels` del sensore riepilogativo sia per le
+    scelte del config/options flow e la risposta di guida_tv.get_channels, così
+    l'ordinamento è identico ovunque (SPEC §6).
+    """
+
+    def sort_key(ch: dict[str, Any]) -> tuple[int, int, str]:
+        num = ch.get("number") or ""
+        if num.isdigit():
+            return (0, int(num), "")
+        return (1, 0, num)
+
+    return sorted(channels, key=sort_key)
+
+
+def channel_choice_label(channel: dict[str, Any]) -> str:
+    """Etichetta leggibile per un canale nei selettori UI: "NUMERO - Nome"."""
+    number = channel.get("number") or "?"
+    name = channel.get("name") or channel.get("slug") or "?"
+    return f"{number} - {name}"
+
+
 def parse_channels(html: str) -> list[dict[str, Any]]:
     """Estrae la lista canali dall'HTML della pagina /canali.
 

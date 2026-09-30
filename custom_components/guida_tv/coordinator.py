@@ -33,6 +33,7 @@ from .const import (
     CONF_DOWNLOAD_LOGOS,
     CONF_INCLUDE_YESTERDAY,
     CONF_REQUEST_DELAY,
+    CONF_SELECTED_CHANNELS,
     CONF_UPDATE_HOUR,
     CONF_UPDATE_MINUTE,
     DAY_PATHS,
@@ -49,6 +50,7 @@ from .const import (
     USER_AGENT,
 )
 from .scraper import (
+    filter_selected_channels,
     logo_filename,
     logo_source_url,
     parse_channels,
@@ -107,6 +109,11 @@ class GuidaTvCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def _download_logos(self) -> bool:
         return self.entry.options.get(CONF_DOWNLOAD_LOGOS, DEFAULT_DOWNLOAD_LOGOS)
 
+    @property
+    def _selected_channels(self) -> list[str] | None:
+        """Slug dei canali scelti dall'utente, o None se mai configurato (= tutti)."""
+        return self.entry.options.get(CONF_SELECTED_CHANNELS)
+
     # -- Ciclo di vita --------------------------------------------------------
     async def async_prepare(self) -> None:
         """Carica la cache da disco e programma il refresh giornaliero.
@@ -117,10 +124,31 @@ class GuidaTvCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         cached = await self._store.async_load()
         if cached:
             self.data = cached
+            # Riapplica la selezione canali corrente alla cache: se l'utente ha
+            # appena deselezionato dei canali via reconfigure, il reload deve
+            # riflettersi subito, senza attendere un nuovo scrape completo.
+            selected = self._selected_channels
+            if selected is not None:
+                before = len(self.data.get("channels", []))
+                self.data["channels"] = filter_selected_channels(
+                    self.data.get("channels", []), selected
+                )
+                kept_slugs = {c["slug"] for c in self.data["channels"]}
+                self.data["programs"] = {
+                    slug: progs
+                    for slug, progs in self.data.get("programs", {}).items()
+                    if slug in kept_slugs
+                }
+                if before != len(self.data["channels"]):
+                    _LOGGER.info(
+                        "Selezione canali applicata alla cache: %d -> %d canali",
+                        before,
+                        len(self.data["channels"]),
+                    )
             _LOGGER.info(
                 "Cache Guida TV caricata: %d canali, aggiornata al %s",
-                len(cached.get("channels", [])),
-                cached.get("last_update"),
+                len(self.data.get("channels", [])),
+                self.data.get("last_update"),
             )
         else:
             _LOGGER.info("Nessuna cache Guida TV: primo scrape necessario")
@@ -248,6 +276,20 @@ class GuidaTvCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if not channels:
             errors.append("Nessun canale estratto dalla pagina /canali")
             raise UpdateFailed("Parsing canali fallito")
+
+        # Selezione canali (SPEC: solo i canali scelti in setup/reconfigure).
+        # Applicata QUI, prima di guida e loghi, per non fare richieste inutili
+        # sui canali esclusi. None = mai configurato -> tutti (retrocompatibilità).
+        selected = self._selected_channels
+        channels = filter_selected_channels(channels, selected)
+        if selected is not None:
+            _LOGGER.debug(
+                "Selezione canali attiva: %d/%d canali inclusi",
+                len(channels),
+                len(selected),
+            )
+        if not channels:
+            _LOGGER.warning("Nessun canale selezionato risulta ancora disponibile sul sito")
 
         # 2) Giorni da scaricare (SPEC §3) ------------------------------------
         day_keys = list(DAY_PATHS.keys())

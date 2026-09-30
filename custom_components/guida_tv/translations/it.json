@@ -4,10 +4,20 @@
       "user": {
         "title": "Guida TV",
         "description": "Aggiunge l'integrazione Guida TV. Fa lo scrape di guidatv.org per la lista canali (nome + numero) e la programmazione (da ieri a dopodomani)."
+      },
+      "channels": {
+        "title": "Seleziona i canali",
+        "data": {
+          "selected_channels": "Canali da scaricare"
+        }
       }
     },
     "abort": {
-      "already_configured": "Guida TV è già configurata."
+      "already_configured": "Guida TV è già configurata.",
+      "cannot_connect": "Impossibile connettersi a guidatv.org."
+    },
+    "error": {
+      "no_channels_selected": "Seleziona almeno un canale."
     }
   },
   "options": {
@@ -21,7 +31,19 @@
           "include_yesterday": "Includi ieri nella guida",
           "download_logos": "Scarica i loghi dei canali in locale"
         }
+      },
+      "channels": {
+        "title": "Seleziona i canali",
+        "data": {
+          "selected_channels": "Canali da scaricare"
+        }
       }
+    },
+    "error": {
+      "no_channels_selected": "Seleziona almeno un canale."
+    },
+    "abort": {
+      "cannot_connect": "Impossibile connettersi a guidatv.org."
     }
   },
   "services": {

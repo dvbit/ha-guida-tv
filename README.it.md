@@ -11,6 +11,8 @@ per alimentare dashboard esterne come **Astrion**.
 
 ## Caratteristiche
 
+- **Selezione canali**: scegli quali canali scaricare durante il setup, e
+  cambia la selezione in qualsiasi momento riconfigurando l'integrazione.
 - **Lista canali** con numero (1–738 e RSI `CH1`/`CH2`), nome, logo e categoria
   (DTT, Sky Cinema, Sky Sport, …).
 - Sensore **in onda ora / successivo** per canale, aggiornato al cambio
@@ -31,6 +33,10 @@ per alimentare dashboard esterne come **Astrion**.
    categoria *Integration*.
 2. Installa **Guida TV**, poi riavvia Home Assistant.
 3. *Impostazioni → Dispositivi e servizi → Aggiungi integrazione → Guida TV*.
+4. Scegli quali canali scaricare (lista aggiornata in tempo reale da
+   guidatv.org). Serve almeno un canale. Puoi cambiare la selezione in
+   qualsiasi momento da *Configura* sull'integrazione — la lista viene
+   ri-scaricata fresca e la tua selezione attuale è preselezionata.
 
 ## Entità
 

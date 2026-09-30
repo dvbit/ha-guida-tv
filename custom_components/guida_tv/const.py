@@ -38,6 +38,7 @@ CONF_REQUEST_DELAY: Final = "request_delay"      # pausa tra richieste (s)
 CONF_CATEGORIES: Final = "categories"            # categorie canali da includere
 CONF_INCLUDE_YESTERDAY: Final = "include_yesterday"  # includere "ieri" nella guida
 CONF_DOWNLOAD_LOGOS: Final = "download_logos"    # scaricare i loghi in locale
+CONF_SELECTED_CHANNELS: Final = "selected_channels"  # slug dei canali da scaricare
 
 # --- Valori di default (SPEC §4) ---------------------------------------------
 DEFAULT_UPDATE_HOUR: Final = 5

@@ -4,10 +4,20 @@
       "user": {
         "title": "Guida TV",
         "description": "Añade la integración Guida TV. Extrae de guidatv.org la lista de canales (nombre + número) y la guía de programación (de ayer a pasado mañana)."
+      },
+      "channels": {
+        "title": "Seleccionar canales",
+        "data": {
+          "selected_channels": "Canales a descargar"
+        }
       }
     },
     "abort": {
-      "already_configured": "Guida TV ya está configurada."
+      "already_configured": "Guida TV ya está configurada.",
+      "cannot_connect": "No se pudo conectar con guidatv.org."
+    },
+    "error": {
+      "no_channels_selected": "Selecciona al menos un canal."
     }
   },
   "options": {
@@ -21,7 +31,19 @@
           "include_yesterday": "Incluir ayer en la guía",
           "download_logos": "Descargar los logotipos de los canales localmente"
         }
+      },
+      "channels": {
+        "title": "Seleccionar canales",
+        "data": {
+          "selected_channels": "Canales a descargar"
+        }
       }
+    },
+    "error": {
+      "no_channels_selected": "Selecciona al menos un canal."
+    },
+    "abort": {
+      "cannot_connect": "No se pudo conectar con guidatv.org."
     }
   },
   "services": {

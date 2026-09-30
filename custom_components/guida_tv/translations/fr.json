@@ -4,10 +4,20 @@
       "user": {
         "title": "Guida TV",
         "description": "Ajoute l'intégration Guida TV. Elle récupère sur guidatv.org la liste des chaînes (nom + numéro) et le guide des programmes (d'hier à après-demain)."
+      },
+      "channels": {
+        "title": "Sélectionner les chaînes",
+        "data": {
+          "selected_channels": "Chaînes à télécharger"
+        }
       }
     },
     "abort": {
-      "already_configured": "Guida TV est déjà configurée."
+      "already_configured": "Guida TV est déjà configurée.",
+      "cannot_connect": "Impossible de se connecter à guidatv.org."
+    },
+    "error": {
+      "no_channels_selected": "Sélectionnez au moins une chaîne."
     }
   },
   "options": {
@@ -21,7 +31,19 @@
           "include_yesterday": "Inclure hier dans le guide",
           "download_logos": "Télécharger les logos des chaînes en local"
         }
+      },
+      "channels": {
+        "title": "Sélectionner les chaînes",
+        "data": {
+          "selected_channels": "Chaînes à télécharger"
+        }
       }
+    },
+    "error": {
+      "no_channels_selected": "Sélectionnez au moins une chaîne."
+    },
+    "abort": {
+      "cannot_connect": "Impossible de se connecter à guidatv.org."
     }
   },
   "services": {

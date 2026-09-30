@@ -34,6 +34,7 @@ from .const import (
     SERVICE_REFRESH,
 )
 from .coordinator import GuidaTvCoordinator
+from .scraper import sort_channels
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -154,13 +155,7 @@ def _register_services(hass: HomeAssistant) -> None:
             coordinator: GuidaTvCoordinator = entry.runtime_data
             channels.extend(coordinator.data.get("channels", []))
 
-        def _sort_key(ch: dict) -> tuple[int, int, str]:
-            num = ch.get("number") or ""
-            if num.isdigit():
-                return (0, int(num), "")
-            return (1, 0, num)
-
-        channels.sort(key=_sort_key)
+        channels = sort_channels(channels)
         _LOGGER.debug("get_channels: %d canali nella risposta", len(channels))
         return {"channels": channels}
 

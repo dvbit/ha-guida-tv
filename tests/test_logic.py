@@ -105,10 +105,35 @@ def test_detail_category_and_logo_helpers():
     assert scraper.logo_filename("https://x/y.jpeg", "super") == "super.jpg"
     print("10. categoria dettaglio + helper logo (source/filename): OK")
 
+def test_filter_and_sort_channels():
+    channels = [
+        {"slug": "rai-1", "number": "1", "name": "Rai 1"},
+        {"slug": "rsi-la1", "number": "CH1", "name": "RSI LA1"},
+        {"slug": "sky-uno-hd", "number": "108", "name": "Sky Uno HD"},
+        {"slug": "canale-20", "number": "20", "name": "Canale 20"},
+    ]
+    # selected_slugs=None -> nessun filtro (retrocompatibilità entry vecchie)
+    assert scraper.filter_selected_channels(channels, None) == channels
+    # selezione esplicita: solo gli slug richiesti, nell'ordine originale
+    sel = scraper.filter_selected_channels(channels, ["sky-uno-hd", "rai-1"])
+    assert [c["slug"] for c in sel] == ["rai-1", "sky-uno-hd"]
+    # lista vuota esplicita -> nessun canale
+    assert scraper.filter_selected_channels(channels, []) == []
+
+    # sort_channels: numerici in ordine crescente, poi alfanumerici (CH1) in coda
+    ordered = scraper.sort_channels(channels)
+    assert [c["slug"] for c in ordered] == ["rai-1", "canale-20", "sky-uno-hd", "rsi-la1"]
+
+    # channel_choice_label: "NUMERO - Nome", fallback su slug/? se mancanti
+    assert scraper.channel_choice_label(channels[0]) == "1 - Rai 1"
+    assert scraper.channel_choice_label({"slug": "x"}) == "? - x"
+    print("11. filter_selected_channels + sort_channels + channel_choice_label: OK")
+
 if __name__ == "__main__":
     test_channels(); test_programs(); test_accents()
     test_malformed_channel(); test_empty_stream()
     test_current_next_logic(); test_dedup_sort()
     test_channel_h5_fallback(); test_sanitize_slug()
     test_detail_category_and_logo_helpers()
-    print("\nTUTTI I 10 TEST PASSATI")
+    test_filter_and_sort_channels()
+    print("\nTUTTI I 11 TEST PASSATI")

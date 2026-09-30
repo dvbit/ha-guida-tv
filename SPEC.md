@@ -42,7 +42,18 @@ Repository: `dvbit/ha-guida-tv`.
 ## 5. Configurazione (interamente da UI)
 
 - Una sola config entry (`single_config_entry`).
-- Opzioni: ora e minuto del refresh, pausa tra richieste, includere "ieri".
+- Opzioni: ora e minuto del refresh, pausa tra richieste, includere "ieri",
+  scaricare i loghi in locale.
+- **Selezione canali**: al setup, dopo lo step iniziale, un multi-select (fetch
+  di `/canali`, numero + nome) fa scegliere quali canali scaricare; nessun
+  canale preselezionato, la selezione non può essere vuota. La scelta si può
+  cambiare in seguito riconfigurando l'integrazione (Options Flow): la lista
+  viene ri-scaricata fresca e preseleziona la scelta già salvata (o **tutti**
+  i canali, se l'entry non aveva mai avuto una selezione esplicita — così le
+  entry create prima di questa funzionalità restano invariate finché l'utente
+  non passa dall'Options Flow). Guida e loghi sono scaricati solo per i canali
+  selezionati, per richieste inutili in meno. I canali deselezionati vengono
+  **rimossi** (entità e device), non solo sospesi.
 - Il cambio opzioni ricarica l'integrazione.
 
 ## 6. Entità
@@ -81,15 +92,17 @@ Repository: `dvbit/ha-guida-tv`.
 - README EN e IT con esempi d'uso, questa specifica inclusa, icona,
   `hacs.json`, `manifest.json` versionato (1.0.0), workflow hassfest + HACS.
 
-## Verifiche eseguite (v1.4.0)
+## Verifiche eseguite (v1.6.0)
 
-- 10 test logici su scraper (incl. sanitize_slug, categoria dettaglio, helper loghi): passati.
-  accenti UTF-8, card malformate, stream vuoto, logica in-onda + progress,
-  dedup + ordinamento): passati.
+- 11 test logici su scraper (incl. sanitize_slug, categoria dettaglio, helper
+  loghi, filter_selected_channels, sort_channels): passati.
 - ruff (E,F,W,I,UP,B,SIM,D) su codice e test: pulito.
 - 19 simboli importati da `homeassistant.*` verificati contro il sorgente
   ufficiale HA 2025.6.0 (minimo dichiarato) e 2026.2.3: tutti risolti
-  (`EntityCategory` corretto su `homeassistant.const`).
+  (`EntityCategory` corretto su `homeassistant.const`; `entity_registry`/
+  `device_registry`/`Platform.SENSOR` verificati per la rimozione dei canali
+  deselezionati; `ConfigFlow.async_create_entry(..., options=...)` verificato
+  per salvare la selezione canali già alla creazione dell'entry).
 - Coerenza incrociata manifest / services.yaml / strings.json / icons.json /
   5 file di traduzione: nessuna divergenza.
 - Parser validato sui campioni HTML/RSC reali forniti da guidatv.org.

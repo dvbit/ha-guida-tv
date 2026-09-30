@@ -17,8 +17,10 @@ from typing import Any
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import MATCH_ALL, EntityCategory
+from homeassistant.const import MATCH_ALL, EntityCategory, Platform
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_point_in_time
@@ -47,7 +49,7 @@ from .const import (
     UNIQUE_ID_PREFIX,
 )
 from .coordinator import GuidaTvCoordinator
-from .scraper import sanitize_slug
+from .scraper import sanitize_slug, sort_channels
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -57,13 +59,13 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Crea le entità sensore; i sensori per-canale sono aggiunti dinamicamente.
+    """Crea le entità sensore; i sensori per-canale sono sincronizzati dinamicamente.
 
     I sensori riepilogativo e diagnostico esistono sempre. I sensori per-canale
-    dipendono dai canali scaricati: al primo avvio senza cache la lista può essere
-    ancora vuota, e nuovi canali possono comparire a refresh successivi. Per questo
-    li aggiungiamo a ogni update del coordinator, tracciando gli slug già creati
-    così da non duplicarli (SPEC §6).
+    dipendono dalla selezione dell'utente (SPEC: solo i canali scelti in
+    setup/reconfigure) e dai canali scaricati: vengono aggiunti quando compaiono
+    e RIMOSSI (entità + device) quando un canale viene deselezionato o non è più
+    disponibile. La sincronizzazione avviene a ogni update del coordinator.
     """
     coordinator: GuidaTvCoordinator = entry.runtime_data
 
@@ -74,12 +76,47 @@ async def async_setup_entry(
         ]
     )
 
-    # Slug (originali) per cui è già stato creato il sensore per-canale
+    # Slug (originali) aggiunti in QUESTA sessione, per evitare ricreazioni
+    # ripetute a ogni update; la rimozione invece ispeziona sempre il registro
+    # (non solo questo set), così funziona anche subito dopo un reload, quando
+    # known_slugs riparte vuoto ma il registro conserva le entità precedenti.
     known_slugs: set[str] = set()
 
     @callback
-    def _add_new_channels() -> None:
-        """Aggiunge un sensore per ogni canale non ancora presente.
+    def _remove_stale_channels(current_safe_slugs: set[str]) -> None:
+        """Rimuove entità e device dei canali non più selezionati/disponibili.
+
+        Ispeziona il registro (non known_slugs) confrontando lo slug sanitizzato
+        estratto dall'unique_id con quelli attualmente attesi (SPEC: deselezione
+        = rimozione pulita, non semplice sospensione dell'aggiornamento).
+        """
+        ent_reg = er.async_get(hass)
+        dev_reg = dr.async_get(hass)
+        prefix = f"{UNIQUE_ID_PREFIX}_"
+        reserved = {"channels", "diagnostic"}
+
+        for reg_entry in er.async_entries_for_config_entry(ent_reg, entry.entry_id):
+            if reg_entry.domain != Platform.SENSOR or reg_entry.platform != DOMAIN:
+                continue
+            if not reg_entry.unique_id.startswith(prefix):
+                continue
+            safe_slug = reg_entry.unique_id[len(prefix):]
+            if safe_slug in reserved or safe_slug in current_safe_slugs:
+                continue
+
+            _LOGGER.info("Rimuovo sensore canale non più selezionato: %s", reg_entry.entity_id)
+            ent_reg.async_remove(reg_entry.entity_id)
+            if reg_entry.device_id:
+                # Rimuovi il device solo se non gli restano altre entità
+                remaining = er.async_entries_for_device(
+                    ent_reg, reg_entry.device_id, include_disabled_entities=True
+                )
+                if not remaining:
+                    dev_reg.async_remove_device(reg_entry.device_id)
+
+    @callback
+    def _sync_channels() -> None:
+        """Aggiunge i sensori mancanti e rimuove quelli non più selezionati.
 
         La costruzione di ogni sensore è isolata: se un canale genera un errore
         (es. dato inatteso), viene loggato e saltato senza compromettere gli altri
@@ -87,14 +124,18 @@ async def async_setup_entry(
         """
         available = coordinator.data.get("channels", []) if coordinator.data else []
         _LOGGER.debug(
-            "Listener canali: %d canali disponibili, %d già noti",
+            "Sync canali: %d canali disponibili, %d già noti in sessione",
             len(available),
             len(known_slugs),
         )
+        current_safe_slugs: set[str] = set()
         new_entities: list[SensorEntity] = []
         for channel in available:
             slug = channel.get("slug")
-            if not slug or slug in known_slugs:
+            if not slug:
+                continue
+            current_safe_slugs.add(sanitize_slug(slug))
+            if slug in known_slugs:
                 continue
             try:
                 entity = GuidaTvChannelSensor(coordinator, channel)
@@ -107,9 +148,11 @@ async def async_setup_entry(
             _LOGGER.info("Aggiunti %d nuovi sensori canale", len(new_entities))
             async_add_entities(new_entities)
 
-    # Crea subito quelli già disponibili (da cache), poi a ogni refresh
-    _add_new_channels()
-    entry.async_on_unload(coordinator.async_add_listener(_add_new_channels))
+        _remove_stale_channels(current_safe_slugs)
+
+    # Sincronizza subito con quanto già disponibile (da cache), poi a ogni refresh
+    _sync_channels()
+    entry.async_on_unload(coordinator.async_add_listener(_sync_channels))
 
 
 def _parse_iso(value: str | None) -> datetime | None:
@@ -154,16 +197,7 @@ class GuidaTvChannelsSensor(CoordinatorEntity[GuidaTvCoordinator], SensorEntity)
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Lista canali ordinata per numero, pronta per la dashboard (SPEC §6)."""
-        channels = self.coordinator.data.get("channels", [])
-
-        def sort_key(ch: dict[str, Any]) -> tuple[int, int, str]:
-            """Ordina numerici prima, poi alfanumerici (es. CH1) in coda."""
-            num = ch.get("number") or ""
-            if num.isdigit():
-                return (0, int(num), "")
-            return (1, 0, num)
-
-        ordered = sorted(channels, key=sort_key)
+        ordered = sort_channels(self.coordinator.data.get("channels", []))
         return {
             ATTR_CHANNELS: [
                 {

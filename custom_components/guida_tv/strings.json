@@ -4,10 +4,20 @@
       "user": {
         "title": "Guida TV",
         "description": "Add the Guida TV integration. It scrapes guidatv.org for the channel list (name + number) and the programme guide (yesterday to the day after tomorrow)."
+      },
+      "channels": {
+        "title": "Select channels",
+        "data": {
+          "selected_channels": "Channels to download"
+        }
       }
     },
     "abort": {
-      "already_configured": "Guida TV is already configured."
+      "already_configured": "Guida TV is already configured.",
+      "cannot_connect": "Could not connect to guidatv.org."
+    },
+    "error": {
+      "no_channels_selected": "Select at least one channel."
     }
   },
   "options": {
@@ -21,7 +31,19 @@
           "include_yesterday": "Include yesterday in the guide",
           "download_logos": "Download channel logos locally"
         }
+      },
+      "channels": {
+        "title": "Select channels",
+        "data": {
+          "selected_channels": "Channels to download"
+        }
       }
+    },
+    "error": {
+      "no_channels_selected": "Select at least one channel."
+    },
+    "abort": {
+      "cannot_connect": "Could not connect to guidatv.org."
     }
   },
   "services": {

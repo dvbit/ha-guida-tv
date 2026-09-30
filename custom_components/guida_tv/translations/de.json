@@ -4,10 +4,20 @@
       "user": {
         "title": "Guida TV",
         "description": "Fügt die Integration Guida TV hinzu. Sie liest von guidatv.org die Senderliste (Name + Nummer) und das Programm (von gestern bis übermorgen)."
+      },
+      "channels": {
+        "title": "Sender auswählen",
+        "data": {
+          "selected_channels": "Herunterzuladende Sender"
+        }
       }
     },
     "abort": {
-      "already_configured": "Guida TV ist bereits konfiguriert."
+      "already_configured": "Guida TV ist bereits konfiguriert.",
+      "cannot_connect": "Verbindung zu guidatv.org nicht möglich."
+    },
+    "error": {
+      "no_channels_selected": "Wähle mindestens einen Sender aus."
     }
   },
   "options": {
@@ -21,7 +31,19 @@
           "include_yesterday": "Gestern in die Programmübersicht aufnehmen",
           "download_logos": "Sender-Logos lokal herunterladen"
         }
+      },
+      "channels": {
+        "title": "Sender auswählen",
+        "data": {
+          "selected_channels": "Herunterzuladende Sender"
+        }
       }
+    },
+    "error": {
+      "no_channels_selected": "Wähle mindestens einen Sender aus."
+    },
+    "abort": {
+      "cannot_connect": "Verbindung zu guidatv.org nicht möglich."
     }
   },
   "services": {
